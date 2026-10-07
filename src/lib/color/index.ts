@@ -83,3 +83,21 @@ export function hueDiff(a: number, b: number): number {
   const d = Math.abs(a - b) % 360;
   return d > 180 ? 360 - d : d;
 }
+
+const clamp255 = (n: number) => Math.max(0, Math.min(255, Math.round(n)));
+
+/** amount > 0 で白に、< 0 で黒に近づける（-1〜1） */
+export function shade(hex: string, amount: number): string {
+  let v = hex.trim().replace(/^#/, '');
+  if (v.length === 3) v = v.split('').map((c) => c + c).join('');
+  if (!/^[0-9a-fA-F]{6}$/.test(v)) return '#888888';
+  const target = amount >= 0 ? 255 : 0;
+  const k = Math.abs(amount);
+  const ch = [0, 2, 4].map((i) => {
+    const c = parseInt(v.slice(i, i + 2), 16);
+    return clamp255(c + (target - c) * k)
+      .toString(16)
+      .padStart(2, '0');
+  });
+  return `#${ch.join('')}`.toUpperCase();
+}
