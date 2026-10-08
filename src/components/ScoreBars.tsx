@@ -20,12 +20,12 @@ export function ScoreBars({ result, compact }: { result: ScoreResult | null; com
         const c = result ? scoreColor(pct) : colors.mute;
         return (
           <View key={key} style={styles.row}>
-            <Icon name={icon} size={compact ? 16 : 18} color={colors.sub} />
-            <Text style={[styles.label, compact && { width: 62, fontSize: 12 }]} numberOfLines={1}>{label}</Text>
+            <Icon name={icon} size={compact ? 15 : 18} color={colors.sub} />
+            <Text style={[styles.label, compact && { width: 68, fontSize: 11.5, marginLeft: -2 }]} numberOfLines={1}>{label}</Text>
             <View style={styles.track}>
               <View style={[styles.fill, { width: `${pct}%`, backgroundColor: c }]} />
             </View>
-            <Text style={[styles.pct, { color: c }, compact && { fontSize: 12, width: 38 }]}>{result ? `${pct}%` : '-'}</Text>
+            <Text style={[styles.pct, { color: c }, compact && { fontSize: 12, width: 34 }]}>{result ? `${pct}%` : '-'}</Text>
           </View>
         );
       })}
@@ -34,7 +34,7 @@ export function ScoreBars({ result, compact }: { result: ScoreResult | null; com
 }
 
 const styles = StyleSheet.create({
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   label: { width: 78, fontSize: 13, color: colors.text },
   track: { flex: 1, height: 6, borderRadius: 3, backgroundColor: '#ECEAE5', overflow: 'hidden' },
   fill: { height: 6, borderRadius: 3 },

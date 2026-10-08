@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import { BottomBar } from '../../src/components/BottomBar';
 import { Chip, PrimaryButton } from '../../src/components/Chip';
 import { ItemImage } from '../../src/components/FlatLay';
@@ -19,6 +19,9 @@ const NEXT_SORT: Record<Sort, Sort> = { new: 'old', old: 'name', name: 'new' };
 
 export default function Closet() {
   const router = useRouter();
+  const { width: screenW } = useWindowDimensions();
+  // 2列グリッドの1枚あたりの画像サイズ（枠の約74%）
+  const imgSize = Math.round(((Math.min(screenW, 480) - 24 - 12 - 16) / 2) * 0.74);
   const items = useStore((s) => s.items);
   const outfits = useStore((s) => s.outfits);
   const addSample = useStore((s) => s.addSampleItems);
@@ -151,9 +154,9 @@ export default function Closet() {
             >
               <View style={styles.tile}>
                 {showPhoto || !item.photoUri ? (
-                  <ItemImage item={item} width={140} height={140} />
+                  <ItemImage item={item} width={imgSize} height={imgSize} />
                 ) : (
-                  <ItemImage item={{ ...item, photoUri: null }} width={140} height={140} />
+                  <ItemImage item={{ ...item, photoUri: null }} width={imgSize} height={imgSize} />
                 )}
                 {selecting && (
                   <View style={[styles.check, on && styles.checkOn]}>

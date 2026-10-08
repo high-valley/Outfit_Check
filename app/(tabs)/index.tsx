@@ -54,6 +54,7 @@ export default function Home() {
       : null;
   const heroResolved = hero ? resolveOutfit(hero, items) : null;
   const heroResult = heroResolved && heroResolved.list.length ? scoreOutfit(heroResolved.list) : null;
+  const heroNotes = heroResult ? [...heroResult.reasons.filter((r) => r.type === 'plus').slice(0, 1), ...heroResult.reasons.filter((r) => r.type === 'minus').slice(0, 1)] : [];
   const improvements = heroResult ? heroResult.reasons.filter((r) => r.type === 'minus').slice(0, 2) : [];
   const dateLabel = new Date().toLocaleDateString('ja-JP', { month: 'long', day: 'numeric', weekday: 'short' });
   const previewW = Math.round(contentW * 0.4);
@@ -94,6 +95,14 @@ export default function Home() {
                       <Text style={[styles.heroPct, { color: scoreColor(heroResult.total) }]}>%</Text>
                     </View>
                     <Text style={styles.heroComment}>{scoreComment(heroResult.total)}</Text>
+                    <View style={{ gap: 6, marginTop: 10 }}>
+                      {heroNotes.map((r, i) => (
+                        <View key={i} style={{ flexDirection: 'row', gap: 6, alignItems: 'flex-start' }}>
+                          <View style={[styles.dot, { backgroundColor: r.type === 'minus' ? colors.red : colors.green }]} />
+                          <Text style={styles.heroNote} numberOfLines={3}>{r.message.replace(/（[−+]?\d+）/, '').split('。')[0]}</Text>
+                        </View>
+                      ))}
+                    </View>
                   </View>
                   <View style={{ gap: 8, marginTop: 10 }}>
                     {!hero.worn && (
@@ -232,7 +241,9 @@ const styles = StyleSheet.create({
   heroLabel: { fontSize: 13, fontWeight: '800', color: colors.text },
   heroScore: { fontSize: 56, fontWeight: '800', lineHeight: 62 },
   heroPct: { fontSize: 24, fontWeight: '800', marginLeft: 2 },
-  heroComment: { fontSize: 12, color: colors.sub, lineHeight: 17 },
+  heroComment: { fontSize: 12.5, color: colors.sub, lineHeight: 18 },
+  heroNote: { flex: 1, fontSize: 11.5, color: colors.text, lineHeight: 16 },
+  dot: { width: 6, height: 6, borderRadius: 3, marginTop: 5 },
   link: { fontSize: 12, color: colors.sub },
   thumb: { width: 68, height: 68, borderRadius: radius.tile, backgroundColor: colors.tile, alignItems: 'center', justifyContent: 'center' },
   thumbName: { fontSize: 11, color: colors.sub, marginTop: 4, maxWidth: 72 },

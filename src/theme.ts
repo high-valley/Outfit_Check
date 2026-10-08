@@ -32,4 +32,4 @@ export const font = { title: 28, h2: 17, body: 14, small: 12, tiny: 10 } as cons
 export const scoreColor = (total: number) => (total >= 80 ? colors.green : total >= 60 ? colors.amber : colors.red);
 
 export const scoreComment = (total: number) =>
-  total >= 80 ? 'バランスの取れたおすすめのコーデです' : total >= 60 ? 'あと少し整えると、もっと良くなります' : '見直しポイントがあります';
+  total >= 80 ? '全体のバランスが良好です' : total >= 60 ? 'あと一歩で、もっと良くなります' : '見直しポイントがあります';

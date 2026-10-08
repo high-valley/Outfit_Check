@@ -167,21 +167,6 @@ export default function OutfitScreen() {
             </View>
           </Card>
 
-          {result && (
-            <Card>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-                <Icon name="bulb" size={20} color={colors.amber} />
-                <Text style={styles.adviceTitle}>スタイリングのアドバイス</Text>
-              </View>
-              {[...advice, ...goods].map((r, i) => (
-                <View key={i} style={styles.reasonRow}>
-                  <Text style={[styles.badge, r.type === 'minus' ? styles.minus : styles.plus]}>{r.type === 'minus' ? `−${Math.abs(r.points)}` : `+${r.points}`}</Text>
-                  <Text style={styles.reasonText}>{r.message}</Text>
-                </View>
-              ))}
-            </Card>
-          )}
-
           <View>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 10 }}>
               {ROWS.filter((r) => byKey(r.key).length > 0).map((r) => (
@@ -212,6 +197,21 @@ export default function OutfitScreen() {
               })}
             </ScrollView>
           </View>
+
+          {result && (
+            <Card>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                <Icon name="bulb" size={20} color={colors.amber} />
+                <Text style={styles.adviceTitle}>スタイリングのアドバイス</Text>
+              </View>
+              {[...advice, ...goods].map((r, i) => (
+                <View key={i} style={styles.reasonRow}>
+                  <Text style={[styles.badge, r.type === 'minus' ? styles.minus : styles.plus]}>{r.type === 'minus' ? `−${Math.abs(r.points)}` : `+${r.points}`}</Text>
+                  <Text style={styles.reasonText}>{r.message}</Text>
+                </View>
+              ))}
+            </Card>
+          )}
 
           {result && (
             <Card>
