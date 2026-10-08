@@ -34,7 +34,7 @@ export default function NewOutfit() {
   const all = useStore((s) => s.items);
   const saveOutfit = useStore((s) => s.saveOutfit);
   const wearOutfit = useStore((s) => s.wearOutfit);
-  const { trial } = useLocalSearchParams<{ trial?: string }>();
+  const { trial, sel: selParam } = useLocalSearchParams<{ trial?: string; sel?: string }>();
   const [includeTrial, setIncludeTrial] = useState(trial === '1');
   const owned = useMemo(() => all.filter((i) => i.isOwned), [all]);
   const trials = useMemo(() => all.filter((i) => !i.isOwned), [all]);
@@ -47,6 +47,26 @@ export default function NewOutfit() {
   useEffect(() => {
     if (initialized.current || owned.length === 0) return;
     initialized.current = true;
+    // ホームの提案から「調整する」で来たときは、その組み合わせを初期状態にする
+    if (selParam) {
+      try {
+        const ids = JSON.parse(selParam) as { top?: string; bottom?: string; onepiece?: string; outer?: string; shoes?: string; accessory?: string[] };
+        const byId = (id?: string) => all.find((i) => i.id === id);
+        const acc = (ids.accessory ?? []).map(byId);
+        setSel({
+          top: byId(ids.top)?.id ?? null,
+          bottom: byId(ids.bottom)?.id ?? null,
+          onepiece: byId(ids.onepiece)?.id ?? null,
+          outer: byId(ids.outer)?.id ?? null,
+          shoes: byId(ids.shoes)?.id ?? null,
+          bag: acc.find((a) => a?.category === 'bag')?.id ?? null,
+          hat: acc.find((a) => a?.category === 'hat')?.id ?? null,
+        });
+        return;
+      } catch {
+        /* 不正な値なら通常の初期化にフォールバック */
+      }
+    }
     const first = (k: Key) => byKey(k)[0]?.id ?? null;
     setSel({ ...EMPTY, top: first('top'), bottom: first('bottom'), shoes: first('shoes') });
     // eslint-disable-next-line react-hooks/exhaustive-deps

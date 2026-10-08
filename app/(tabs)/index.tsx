@@ -4,6 +4,7 @@ import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-n
 import { BottomBar } from '../../src/components/BottomBar';
 import { PrimaryButton } from '../../src/components/Chip';
 import { OutfitCard } from '../../src/components/OutfitCard';
+import { CATEGORY_LABEL } from '../../src/lib/labels';
 import { dateKey, suggestOutfits } from '../../src/lib/suggest';
 import { useStore } from '../../src/store';
 
@@ -26,6 +27,15 @@ export default function Home() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [items, outfits, seed],
   );
+  const trialCount = items.filter((i) => !i.isOwned).length;
+  // お試しデザインを使った提案（手持ちの服と組み合わせたときの相性を見る）
+  const trialSuggestions = useMemo(
+    () => (trialCount ? suggestOutfits(items, outfits, { rng: seededRng(seed), trial: 'only' }) : []),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [items, outfits, seed],
+  );
+  const adjust = (itemIds: object, trial = false) =>
+    router.push({ pathname: '/outfit/new', params: { sel: JSON.stringify(itemIds), ...(trial ? { trial: '1' } : {}) } });
 
   return (
     <View style={styles.wrap}>
@@ -45,18 +55,52 @@ export default function Home() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             {suggestions.map((s, i) => (
               <OutfitCard key={s.items.map((x) => x.id).join('-')} itemIds={s.itemIds} items={items} score={s.score} width={cardW} subtitle={`候補 ${i + 1}`}>
-                <View style={{ flexDirection: 'row' }}>
+                <View style={{ flexDirection: 'row', gap: 6 }}>
                   <PrimaryButton label="これを着る" onPress={() => wearOutfit(s.itemIds, s.score, today)} />
+                </View>
+                <View style={{ flexDirection: 'row' }}>
+                  <PrimaryButton label="調整する" variant="secondary" onPress={() => adjust(s.itemIds)} />
                 </View>
               </OutfitCard>
             ))}
           </ScrollView>
         )}
-        {suggestions.length > 0 && (
+        {(suggestions.length > 0 || trialSuggestions.length > 0) && (
           <View style={{ flexDirection: 'row', marginTop: 12 }}>
             <PrimaryButton label="別の候補を見る" variant="secondary" onPress={() => setSeed((n) => n + 1)} />
           </View>
         )}
+
+        <View style={{ marginTop: 28 }}>
+          <Text style={styles.h}>お試しデザインのコーデ提案 🧪</Text>
+          {trialCount === 0 ? (
+            <>
+              <Text style={styles.note}>持っていない服を「お試しデザイン」で作ると、手持ちの服と合わせたときのおすすめコーデが出ます。買う前の相性チェックに使えます。</Text>
+              <View style={{ flexDirection: 'row', marginTop: 10 }}>
+                <PrimaryButton label="＋ お試しデザインを作る" variant="secondary" onPress={() => router.push('/item/new?trial=1')} />
+              </View>
+            </>
+          ) : trialSuggestions.length === 0 ? (
+            <Text style={styles.note}>お試しの服と合わせられる手持ちの服が足りません（トップス＋ボトムスなどを登録してください）。</Text>
+          ) : (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
+              {trialSuggestions.map((s) => (
+                <OutfitCard
+                  key={s.items.map((x) => x.id).join('-')}
+                  itemIds={s.itemIds}
+                  items={items}
+                  score={s.score}
+                  width={cardW}
+                  subtitle={`お試し：${s.items.filter((i) => !i.isOwned).map((i) => i.name || CATEGORY_LABEL[i.category]).join('、')}`}
+                >
+                  <View style={{ flexDirection: 'row' }}>
+                    <PrimaryButton label="調整する" variant="secondary" onPress={() => adjust(s.itemIds, true)} />
+                  </View>
+                </OutfitCard>
+              ))}
+            </ScrollView>
+          )}
+        </View>
       </ScrollView>
       <BottomBar>
         {owned.length === 0 && <PrimaryButton label="サンプルの服を登録" variant="secondary" onPress={addSample} />}
