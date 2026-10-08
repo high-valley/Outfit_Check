@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Chip, PrimaryButton } from '../../src/components/Chip';
 import { BottomBar } from '../../src/components/BottomBar';
 import { SelectBar } from '../../src/components/SelectBar';
@@ -18,6 +18,8 @@ export default function Closet() {
   const [tab, setTab] = useState<Slot | 'all' | 'trial'>('all');
   const owned = useMemo(() => items.filter((i) => i.isOwned), [items]);
   const trials = useMemo(() => items.filter((i) => !i.isOwned), [items]);
+  const [showPhoto, setShowPhoto] = useState(false);
+  const hasPhoto = items.some((i) => i.photoUri);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const shown = tab === 'all' ? owned : tab === 'trial' ? trials : owned.filter((i) => CATEGORY_SLOT[i.category] === tab);
@@ -50,6 +52,7 @@ export default function Closet() {
           <Chip key={s} label={SLOT_LABEL[s]} selected={tab === s} onPress={() => setTab(s)} />
         ))}
         <Chip label={`お試し（${trials.length}）`} selected={tab === 'trial'} onPress={() => setTab('trial')} />
+        {hasPhoto && <Chip label={showPhoto ? '📷 写真で表示中' : '🎨 イラストで表示中'} selected={showPhoto} onPress={() => setShowPhoto((v) => !v)} />}
         {shown.length > 0 && (
           <View style={{ marginLeft: 'auto' }}>
             <Chip label={selecting ? 'キャンセル' : '選択'} selected={selecting} onPress={selecting ? exit : () => setSelecting(true)} />
@@ -77,7 +80,11 @@ export default function Closet() {
                   <Text style={{ color: '#FFFFFF', fontWeight: '800', fontSize: 12 }}>{selected.has(item.id) ? '✓' : ''}</Text>
                 </View>
               )}
-              <ClothingIllustration category={item.category} mainColor={item.mainColor} subColor={item.subColor} pattern={item.pattern} width={84} height={84} />
+              {showPhoto && item.photoUri ? (
+                <Image source={{ uri: item.photoUri }} style={{ width: '100%', height: '100%', borderRadius: 10 }} resizeMode="contain" accessibilityLabel={`${item.name || CATEGORY_LABEL[item.category]}の写真`} />
+              ) : (
+                <ClothingIllustration category={item.category} mainColor={item.mainColor} subColor={item.subColor} pattern={item.pattern} width={84} height={84} />
+              )}
             </View>
             <Text style={styles.name} numberOfLines={1}>{item.name || CATEGORY_LABEL[item.category]}</Text>
           </Pressable>
@@ -94,8 +101,9 @@ export default function Closet() {
             </>
           ) : (
             <>
-              <PrimaryButton label="＋ 服を登録" onPress={() => router.push('/item/new')} />
-              <PrimaryButton label="コーデを作る" variant="secondary" onPress={() => router.push('/outfit/new')} />
+              <PrimaryButton label="📷 写真から" onPress={() => router.push('/item/new')} />
+              <PrimaryButton label="＋ 手入力" variant="secondary" onPress={() => router.push('/item/new')} />
+              <PrimaryButton label="コーデ" variant="secondary" onPress={() => router.push('/outfit/new')} />
             </>
           )}
         </BottomBar>

@@ -1,6 +1,6 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BottomBar } from '../../src/components/BottomBar';
 import { Chip, ChipRow, PrimaryButton } from '../../src/components/Chip';
 import { ClothingIllustration } from '../../src/components/ClothingIllustration';
@@ -8,6 +8,9 @@ import {
   CATEGORY_LABEL, COLOR_PRESETS, FIT_LABEL, LENGTH_LABEL, PATTERN_LABEL, SEASON_LABEL, SLOT_LABEL, TASTE_LABEL, THICKNESS_LABEL,
 } from '../../src/lib/labels';
 import { newId } from '../../src/lib/id';
+import { extractDominantColors } from '../../src/lib/photo/dominantColor';
+import { pickPhoto } from '../../src/lib/photo/pickPhoto';
+import type { PhotoSource } from '../../src/lib/photo/types';
 import { useStore } from '../../src/store';
 import { CATEGORY_SLOT, SLOTS, type Category, type ClothingItem, type Fit, type Length, type Pattern, type Season, type Taste, type Thickness } from '../../src/types';
 
@@ -24,6 +27,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 function ColorPicker({ value, onChange, allowNone }: { value: string | null; onChange: (v: string | null) => void; allowNone?: boolean }) {
   const [text, setText] = useState(value ?? '');
+  useEffect(() => setText(value ?? ''), [value]);
   const set = (v: string | null) => {
     setText(v ?? '');
     onChange(v);
@@ -75,6 +79,39 @@ export default function ItemForm() {
   const [seasons, setSeasons] = useState<Season[]>(existing?.seasons ?? ['spring', 'summer', 'autumn', 'winter']);
   const [thickness, setThickness] = useState<Thickness>(existing?.thickness ?? 'medium');
   const [name, setName] = useState(existing?.name ?? '');
+  const [photoUri, setPhotoUri] = useState<string | null>(existing?.photoUri ?? null);
+  const [suggestSub, setSuggestSub] = useState<string | null>(null);
+  const [photoMsg, setPhotoMsg] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const takePhoto = async (source: PhotoSource) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const photo = await pickPhoto(source);
+      if (!photo) return;
+      setPhotoUri(photo.thumbUri);
+      const colors = photo.pixels ? extractDominantColors(photo.pixels) : null;
+      if (colors) {
+        setMainColor(colors.main);
+        setSuggestSub(colors.secondary);
+        setPhotoMsg(`写真から色を読み取りました（${colors.main}）。違う場合は下の「メインカラー」で直せます。種類・柄・シルエットなどは、写真を見ながら選んでください。`);
+      } else {
+        setSuggestSub(null);
+        setPhotoMsg('色を読み取れませんでした。写真を見ながら、色や種類を選んでください。');
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '写真を取り込めませんでした');
+    } finally {
+      setBusy(false);
+    }
+  };
+  const removePhoto = () => {
+    setPhotoUri(null);
+    setSuggestSub(null);
+    setPhotoMsg(null);
+  };
 
   const toggleTaste = (t: Taste) =>
     setTastes((cur) => (cur.includes(t) ? (cur.length > 1 ? cur.filter((x) => x !== t) : cur) : cur.length >= 2 ? [cur[1], t] : [...cur, t]));
@@ -85,12 +122,17 @@ export default function ItemForm() {
     const item: ClothingItem = {
       id: existing?.id ?? newId(),
       category, mainColor, subColor: pattern === 'plain' && !subColor ? null : subColor, pattern, fit, length, tastes, seasons, thickness,
-      photoUri: existing?.photoUri ?? null,
+      photoUri,
       isOwned: !isTrial,
       name: name.trim(),
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
-    await saveItem(item);
+    try {
+      await saveItem(item);
+    } catch {
+      setError('保存できませんでした。保存容量がいっぱいの可能性があります（不要な服や写真を削除するか、設定からバックアップして整理してください）');
+      return;
+    }
     router.back();
   };
   const own = async () => {
@@ -108,9 +150,35 @@ export default function ItemForm() {
       <Stack.Screen options={{ title: isTrial ? (isNew ? 'お試しデザイン' : 'お試しデザインの編集') : isNew ? '服の登録' : '服の編集' }} />
       {isTrial && <Text style={styles.trialBanner}>お試しデザイン：持っていない服を作って、手持ち服との相性を採点できます（提案には使われません）</Text>}
       <View style={styles.preview}>
-        <ClothingIllustration category={category} mainColor={mainColor} subColor={subColor} pattern={pattern} width={150} height={150} />
+        {photoUri && (
+          <View style={styles.previewCol}>
+            <Image source={{ uri: photoUri }} style={styles.photo} resizeMode="contain" accessibilityLabel="登録した写真" />
+            <Text style={styles.previewLabel}>写真</Text>
+          </View>
+        )}
+        <View style={styles.previewCol}>
+          <ClothingIllustration category={category} mainColor={mainColor} subColor={subColor} pattern={pattern} width={photoUri ? 130 : 150} height={photoUri ? 130 : 150} />
+          <Text style={styles.previewLabel}>イラスト</Text>
+        </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        <Section title="写真から登録">
+          <ChipRow>
+            <Chip label="📷 撮影" onPress={() => takePhoto('camera')} disabled={busy} />
+            <Chip label="🖼 アルバムから" onPress={() => takePhoto('library')} disabled={busy} />
+            {photoUri && <Chip label="写真を外す" onPress={removePhoto} />}
+          </ChipRow>
+          <Text style={styles.hint}>
+            {busy ? '読み取り中…' : '服を無地の背景に広げて撮ると、色をきれいに読み取れます。写真は端末の中だけに保存され、外部には送信されません。'}
+          </Text>
+          {photoMsg && <Text style={styles.photoMsg}>{photoMsg}</Text>}
+          {suggestSub && (
+            <Pressable onPress={() => setSubColor(suggestSub)} style={styles.subSuggest} accessibilityRole="button">
+              <View style={[styles.subDot, { backgroundColor: suggestSub }]} />
+              <Text style={{ fontSize: 13, color: '#374151' }}>2色目の候補 {suggestSub} を柄・配色の色に使う</Text>
+            </Pressable>
+          )}
+        </Section>
         <Section title="種類">
           {SLOTS.map((slot) => {
             const cats = (Object.keys(CATEGORY_SLOT) as Category[]).filter((c) => CATEGORY_SLOT[c] === slot);
@@ -146,6 +214,7 @@ export default function ItemForm() {
           <TextInput value={name} onChangeText={setName} placeholder="例：お気に入りの白T" style={styles.input} />
         </Section>
       </ScrollView>
+      {error && <Text style={styles.error}>{error}</Text>}
       <BottomBar inset>
         {!isNew && <PrimaryButton label="削除" variant="danger" onPress={remove} />}
         {!isNew && isTrial && <PrimaryButton label="手持ちに追加" variant="secondary" onPress={own} />}
@@ -157,7 +226,15 @@ export default function ItemForm() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#FFFFFF' },
-  preview: { alignItems: 'center', paddingVertical: 8, backgroundColor: '#F9FAFB', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  previewCol: { alignItems: 'center' },
+  previewLabel: { fontSize: 11, color: '#6B7280', marginTop: 2 },
+  photo: { width: 130, height: 130, borderRadius: 10, backgroundColor: '#FFFFFF' },
+  hint: { fontSize: 12, color: '#6B7280', lineHeight: 18 },
+  photoMsg: { fontSize: 12, color: '#166534', backgroundColor: '#DCFCE7', borderRadius: 8, padding: 8, lineHeight: 18 },
+  subSuggest: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40 },
+  subDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: '#D1D5DB' },
+  error: { position: 'absolute', left: 12, right: 12, bottom: 84, backgroundColor: '#FEE2E2', color: '#991B1B', borderRadius: 10, padding: 10, fontSize: 12, lineHeight: 18, overflow: 'hidden' },
+  preview: { flexDirection: 'row', justifyContent: 'center', gap: 24, alignItems: 'flex-end', paddingVertical: 8, backgroundColor: '#F9FAFB', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
   trialBanner: { fontSize: 12, color: '#B45309', backgroundColor: '#FEF3C7', paddingHorizontal: 14, paddingVertical: 8 },
   section: { marginBottom: 18 },
   label: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 8 },

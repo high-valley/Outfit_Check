@@ -25,7 +25,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "手持ちの服の写真を登録するために、写真ライブラリへアクセスします。",
+          "cameraPermission": "手持ちの服を撮影して登録するために、カメラを使います。"
+        }
+      ]
     ],
     "scheme": "outfitcheck"
   }
