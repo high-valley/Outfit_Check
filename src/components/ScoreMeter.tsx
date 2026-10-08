@@ -42,16 +42,16 @@ export function ScoreMeter({ result }: { result: ScoreResult | null }) {
 }
 
 const styles = StyleSheet.create({
-  wrap: { paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFFFFF' },
+  wrap: { paddingHorizontal: 16, paddingTop: 6, paddingBottom: 8, backgroundColor: '#FFFFFF' },
   row: { flexDirection: 'row', alignItems: 'center' },
-  number: { fontSize: 64, fontWeight: '800', lineHeight: 72, minWidth: 92, textAlign: 'right' },
-  percent: { fontSize: 26, fontWeight: '700', marginLeft: 2, marginRight: 14 },
+  number: { fontSize: 52, fontWeight: '800', lineHeight: 60, minWidth: 76, textAlign: 'right' },
+  percent: { fontSize: 22, fontWeight: '700', marginLeft: 2, marginRight: 12 },
   bars: { flex: 1, gap: 3 },
   miniRow: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   miniLabel: { width: 64, fontSize: 11, color: '#6B7280' },
   miniTrack: { flex: 1, height: 5, borderRadius: 3, backgroundColor: '#E5E7EB', overflow: 'hidden' },
   miniFill: { height: 5, borderRadius: 3 },
   miniValue: { width: 36, fontSize: 11, color: '#6B7280', textAlign: 'right' },
-  track: { height: 10, borderRadius: 5, backgroundColor: '#E5E7EB', overflow: 'hidden', marginTop: 8 },
+  track: { height: 10, borderRadius: 5, backgroundColor: '#E5E7EB', overflow: 'hidden', marginTop: 4 },
   fill: { height: 10, borderRadius: 5 },
 });

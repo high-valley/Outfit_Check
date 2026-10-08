@@ -1,7 +1,8 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { PrimaryButton } from '../../src/components/Chip';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { BottomBar } from '../../src/components/BottomBar';
+import { Chip, PrimaryButton } from '../../src/components/Chip';
 import { Mannequin } from '../../src/components/Mannequin';
 import { ScoreMeter } from '../../src/components/ScoreMeter';
 import { SlotCarousel } from '../../src/components/SlotCarousel';
@@ -26,11 +27,20 @@ const EMPTY: Sel = { top: null, bottom: null, onepiece: null, outer: null, shoes
 
 export default function NewOutfit() {
   const router = useRouter();
+  const { width: screenW } = useWindowDimensions();
+  const contentW = Math.min(screenW, 480);
+  const mannequinW = Math.round(Math.min(170, contentW * 0.4));
+  const tileW = 68;
   const all = useStore((s) => s.items);
   const saveOutfit = useStore((s) => s.saveOutfit);
   const wearOutfit = useStore((s) => s.wearOutfit);
+  const { trial } = useLocalSearchParams<{ trial?: string }>();
+  const [includeTrial, setIncludeTrial] = useState(trial === '1');
   const owned = useMemo(() => all.filter((i) => i.isOwned), [all]);
-  const byKey = (k: Key) => owned.filter((i) => ROWS.find((r) => r.key === k)!.categories.includes(i.category));
+  const trials = useMemo(() => all.filter((i) => !i.isOwned), [all]);
+  // 手持ち → お試しの順に並べる（初期選択は手持ちが優先される）
+  const candidates = useMemo(() => (includeTrial ? [...owned, ...trials] : owned), [owned, trials, includeTrial]);
+  const byKey = (k: Key) => candidates.filter((i) => ROWS.find((r) => r.key === k)!.categories.includes(i.category));
 
   const [sel, setSel] = useState<Sel>(EMPTY);
   const initialized = useRef(false);
@@ -53,7 +63,7 @@ export default function NewOutfit() {
       return next;
     });
 
-  const find = (id: string | null) => owned.find((i) => i.id === id) ?? null;
+  const find = (id: string | null) => candidates.find((i) => i.id === id) ?? null;
   const picked = {
     top: find(sel.top),
     bottom: find(sel.bottom),
@@ -82,8 +92,9 @@ export default function NewOutfit() {
     router.back();
   };
 
+  const hasTrial = list.some((i) => !i.isOwned);
   const wearToday = async () => {
-    if (!result) return;
+    if (!result || hasTrial) return;
     await wearOutfit(toItemIds(list), result.total, dateKey(new Date()));
     router.back();
   };
@@ -99,26 +110,35 @@ export default function NewOutfit() {
   return (
     <View style={styles.wrap}>
       <ScoreMeter result={result} />
-      <ScrollView contentContainerStyle={{ paddingBottom: 90 }}>
-        <View style={styles.mannequin}>
-          <Mannequin
-            width={190}
-            items={{
-              top: picked.top,
-              bottom: picked.bottom,
-              onepiece: picked.onepiece,
-              outer: picked.outer,
-              shoes: picked.shoes,
-              accessory: [picked.bag, picked.hat].filter((x): x is ClothingItem => !!x),
-            }}
-          />
+      <View style={styles.trialRow}>
+        <Chip label={`お試しを含める（${trials.length}）`} selected={includeTrial} onPress={() => setIncludeTrial((v) => !v)} />
+        <Chip label="＋ お試し作成" onPress={() => router.push('/item/new?trial=1')} />
+      </View>
+      {hasTrial && <Text style={styles.trialNote}>お試しの服が入っています。「今日これを着る」は手持ちの服だけのときに使えます。</Text>}
+      <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
+        <View style={styles.split}>
+          <View style={[styles.mannequin, { width: mannequinW + 16 }]}>
+            <Mannequin
+              width={mannequinW}
+              items={{
+                top: picked.top,
+                bottom: picked.bottom,
+                onepiece: picked.onepiece,
+                outer: picked.outer,
+                shoes: picked.shoes,
+                accessory: [picked.bag, picked.hat].filter((x): x is ClothingItem => !!x),
+              }}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            {ROWS.map((r) => {
+              const items = byKey(r.key);
+              if (items.length === 0) return null;
+              const disabled = (r.key === 'top' || r.key === 'bottom') && !!sel.onepiece;
+              return <SlotCarousel key={r.key} label={r.label} items={items} selectedId={sel[r.key]} onSelect={(id) => set(r.key, id)} disabled={disabled} itemW={tileW} />;
+            })}
+          </View>
         </View>
-        {ROWS.map((r) => {
-          const items = byKey(r.key);
-          if (items.length === 0) return null;
-          const disabled = (r.key === 'top' || r.key === 'bottom') && !!sel.onepiece;
-          return <SlotCarousel key={r.key} label={r.label} items={items} selectedId={sel[r.key]} onSelect={(id) => set(r.key, id)} disabled={disabled} />;
-        })}
         <View style={styles.reasons}>
           <Text style={styles.reasonsTitle}>判定の理由</Text>
           {result?.reasons.map((r, i) => (
@@ -130,23 +150,25 @@ export default function NewOutfit() {
           {!result && <Text style={{ color: '#9CA3AF' }}>服を選ぶと理由が表示されます</Text>}
         </View>
       </ScrollView>
-      <View style={styles.bottom}>
+      <BottomBar inset>
         <PrimaryButton label="保存のみ" variant="secondary" onPress={save} disabled={!result} />
-        <PrimaryButton label="今日これを着る" onPress={wearToday} disabled={!result} />
-      </View>
+        <PrimaryButton label="今日これを着る" onPress={wearToday} disabled={!result || hasTrial} />
+      </BottomBar>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#FFFFFF' },
-  mannequin: { alignItems: 'center', paddingVertical: 12, backgroundColor: '#F9FAFB', marginBottom: 12 },
-  reasons: { paddingHorizontal: 16, paddingTop: 8, gap: 8 },
+  trialRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingHorizontal: 12, paddingVertical: 6, backgroundColor: '#FFFFFF' },
+  trialNote: { fontSize: 11, color: '#B45309', paddingHorizontal: 16, paddingBottom: 6, backgroundColor: '#FFFFFF' },
+  split: { flexDirection: 'row', gap: 6, paddingRight: 4 },
+  mannequin: { alignItems: 'center', paddingVertical: 10, backgroundColor: '#F9FAFB', borderTopRightRadius: 14, borderBottomRightRadius: 14, alignSelf: 'flex-start' },
+  reasons: { paddingHorizontal: 16, paddingTop: 16, gap: 8 },
   reasonsTitle: { fontSize: 14, fontWeight: '700', color: '#111827' },
   reasonRow: { flexDirection: 'row', gap: 8, alignItems: 'flex-start' },
   badge: { minWidth: 40, textAlign: 'center', fontSize: 12, fontWeight: '700', paddingVertical: 2, paddingHorizontal: 6, borderRadius: 6, overflow: 'hidden' },
   minus: { backgroundColor: '#FEE2E2', color: '#B91C1C' },
   plus: { backgroundColor: '#DCFCE7', color: '#15803D' },
   reasonText: { flex: 1, fontSize: 13, color: '#374151', lineHeight: 19 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#FFFFFFEE', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
 });

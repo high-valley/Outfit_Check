@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Chip } from '../../src/components/Chip';
+import { WearCalendar } from '../../src/components/WearCalendar';
+import { shiftMonth, wornByDate } from '../../src/lib/calendar';
+import { dateKey } from '../../src/lib/suggest';
 import { OutfitCard } from '../../src/components/OutfitCard';
 import { SelectBar } from '../../src/components/SelectBar';
 import { confirmAsync } from '../../src/lib/confirm';
@@ -10,6 +13,10 @@ export default function History() {
   const outfits = useStore((s) => s.outfits);
   const items = useStore((s) => s.items);
   const removeOutfits = useStore((s) => s.removeOutfits);
+  const [view, setView] = useState<'calendar' | 'list'>('calendar');
+  const now = new Date();
+  const [cursor, setCursor] = useState({ year: now.getFullYear(), month: now.getMonth() });
+  const [day, setDay] = useState<string | null>(dateKey(now));
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
@@ -32,8 +39,43 @@ export default function History() {
     exit();
   };
 
+  const dayOutfits = day ? (wornByDate(outfits).get(day) ?? []) : [];
+  const viewTabs = (
+    <View style={styles.seg}>
+      <Chip label="カレンダー" selected={view === 'calendar'} onPress={() => { exit(); setView('calendar'); }} />
+      <Chip label="一覧" selected={view === 'list'} onPress={() => setView('list')} />
+    </View>
+  );
+
+  if (view === 'calendar')
+    return (
+      <View style={styles.wrap}>
+        {viewTabs}
+        <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
+          <WearCalendar
+            year={cursor.year}
+            month={cursor.month}
+            outfits={outfits}
+            selected={day}
+            onSelect={setDay}
+            onShift={(d) => setCursor((c) => shiftMonth(c.year, c.month, d))}
+          />
+          <View style={{ paddingHorizontal: 16, paddingTop: 8, gap: 10 }}>
+            <Text style={styles.dayTitle}>{day ? `${day.replace(/-/g, '/')} に着たコーデ` : '日付を選んでください'}</Text>
+            {day && dayOutfits.length === 0 && <Text style={styles.empty0}>この日の着用記録はありません。ホームの「これを着る」で記録されます。</Text>}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+              {dayOutfits.map((o) => (
+                <OutfitCard key={o.id} itemIds={o.itemIds} items={items} score={o.score} width={170} subtitle={`着用 ${o.wornDates.length}回`} />
+              ))}
+            </View>
+          </View>
+        </ScrollView>
+      </View>
+    );
+
   return (
     <View style={styles.wrap}>
+      {viewTabs}
       <View style={styles.head}>
         <Text style={styles.count}>保存したコーデ: {outfits.length}件</Text>
         {outfits.length > 0 && <Chip label={selecting ? 'キャンセル' : '選択'} selected={selecting} onPress={selecting ? exit : () => setSelecting(true)} />}
@@ -70,6 +112,9 @@ export default function History() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#FFFFFF' },
+  seg: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10 },
+  dayTitle: { fontSize: 14, fontWeight: '800', color: '#111827' },
+  empty0: { fontSize: 13, color: '#6B7280', lineHeight: 20 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 },
   count: { fontSize: 13, color: '#6B7280' },
   empty: { padding: 24, color: '#6B7280', lineHeight: 20, fontSize: 13 },

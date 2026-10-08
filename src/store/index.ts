@@ -16,6 +16,9 @@ type State = {
   removeOutfits: (ids: string[]) => Promise<void>;
   /** コーデを着る：同じ組み合わせがあれば着用日を追加、なければ新規保存 */
   wearOutfit: (itemIds: Outfit['itemIds'], score: number, date: string) => Promise<void>;
+  /** バックアップの取り込み（同じ id は上書き） */
+  importData: (items: ClothingItem[], outfits: Outfit[]) => Promise<void>;
+  clearAll: () => Promise<void>;
   addSampleItems: () => Promise<void>;
 };
 
@@ -71,6 +74,17 @@ export const useStore = create<State>((set, get) => ({
     await repository.upsertOutfit(outfit);
     set({ outfits: [outfit, ...get().outfits] });
     return outfit;
+  },
+  async importData(items, outfits) {
+    for (const i of items) await repository.upsertItem(i);
+    for (const o of outfits) await repository.upsertOutfit(o);
+    const [allItems, allOutfits] = await Promise.all([repository.listItems(), repository.listOutfits()]);
+    set({ items: allItems, outfits: allOutfits });
+  },
+  async clearAll() {
+    await repository.deleteItems(get().items.map((i) => i.id));
+    await repository.deleteOutfits(get().outfits.map((o) => o.id));
+    set({ items: [], outfits: [] });
   },
   async addSampleItems() {
     const now = Date.now();

@@ -33,9 +33,9 @@ export function PrimaryButton({ label, onPress, variant = 'primary', disabled }:
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 999, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
+  chip: { paddingHorizontal: 14, paddingVertical: 9, minHeight: 40, justifyContent: 'center', borderRadius: 999, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
   chipOn: { backgroundColor: '#111827', borderColor: '#111827' },
-  text: { fontSize: 13, color: '#374151' },
+  text: { fontSize: 14, color: '#374151' },
   textOn: { color: '#FFFFFF', fontWeight: '600' },
   btn: { flex: 1, minHeight: 48, borderRadius: 12, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
   btnSecondary: { backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },

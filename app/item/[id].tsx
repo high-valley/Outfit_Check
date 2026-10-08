@@ -1,6 +1,7 @@
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { BottomBar } from '../../src/components/BottomBar';
 import { Chip, ChipRow, PrimaryButton } from '../../src/components/Chip';
 import { ClothingIllustration } from '../../src/components/ClothingIllustration';
 import {
@@ -31,12 +32,12 @@ function ColorPicker({ value, onChange, allowNone }: { value: string | null; onC
     <View style={{ gap: 8 }}>
       <View style={styles.swatches}>
         {allowNone && (
-          <Pressable onPress={() => set(null)} style={[styles.swatch, styles.swatchNone, value === null && styles.swatchOn]} accessibilityLabel="なし">
+          <Pressable onPress={() => set(null)} style={[styles.swatch, styles.swatchNone, value === null && styles.swatchOn]} accessibilityRole="button" accessibilityLabel="なし">
             <Text style={{ fontSize: 11, color: '#6B7280' }}>なし</Text>
           </Pressable>
         )}
         {COLOR_PRESETS.map((c) => (
-          <Pressable key={c} onPress={() => set(c)} style={[styles.swatch, { backgroundColor: c }, value?.toUpperCase() === c && styles.swatchOn]} accessibilityLabel={c} />
+          <Pressable key={c} onPress={() => set(c)} style={[styles.swatch, { backgroundColor: c }, value?.toUpperCase() === c && styles.swatchOn]} accessibilityRole="button" accessibilityLabel={c} />
         ))}
       </View>
       <TextInput
@@ -56,12 +57,13 @@ function ColorPicker({ value, onChange, allowNone }: { value: string | null; onC
 }
 
 export default function ItemForm() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, trial } = useLocalSearchParams<{ id: string; trial?: string }>();
   const router = useRouter();
   const existing = useStore((s) => s.items.find((i) => i.id === id));
   const saveItem = useStore((s) => s.saveItem);
   const removeItem = useStore((s) => s.removeItem);
   const isNew = id === 'new' || !existing;
+  const isTrial = existing ? !existing.isOwned : trial === '1';
 
   const [category, setCategory] = useState<Category>(existing?.category ?? 'tshirt');
   const [mainColor, setMainColor] = useState(existing?.mainColor ?? '#FFFFFF');
@@ -84,11 +86,16 @@ export default function ItemForm() {
       id: existing?.id ?? newId(),
       category, mainColor, subColor: pattern === 'plain' && !subColor ? null : subColor, pattern, fit, length, tastes, seasons, thickness,
       photoUri: existing?.photoUri ?? null,
-      isOwned: existing?.isOwned ?? true,
+      isOwned: !isTrial,
       name: name.trim(),
       createdAt: existing?.createdAt ?? new Date().toISOString(),
     };
     await saveItem(item);
+    router.back();
+  };
+  const own = async () => {
+    if (!existing) return;
+    await saveItem({ ...existing, isOwned: true });
     router.back();
   };
   const remove = async () => {
@@ -98,7 +105,8 @@ export default function ItemForm() {
 
   return (
     <View style={styles.wrap}>
-      <Stack.Screen options={{ title: isNew ? '服の登録' : '服の編集' }} />
+      <Stack.Screen options={{ title: isTrial ? (isNew ? 'お試しデザイン' : 'お試しデザインの編集') : isNew ? '服の登録' : '服の編集' }} />
+      {isTrial && <Text style={styles.trialBanner}>お試しデザイン：持っていない服を作って、手持ち服との相性を採点できます（提案には使われません）</Text>}
       <View style={styles.preview}>
         <ClothingIllustration category={category} mainColor={mainColor} subColor={subColor} pattern={pattern} width={150} height={150} />
       </View>
@@ -138,10 +146,11 @@ export default function ItemForm() {
           <TextInput value={name} onChangeText={setName} placeholder="例：お気に入りの白T" style={styles.input} />
         </Section>
       </ScrollView>
-      <View style={styles.bottom}>
+      <BottomBar inset>
         {!isNew && <PrimaryButton label="削除" variant="danger" onPress={remove} />}
+        {!isNew && isTrial && <PrimaryButton label="手持ちに追加" variant="secondary" onPress={own} />}
         <PrimaryButton label="保存" onPress={save} />
-      </View>
+      </BottomBar>
     </View>
   );
 }
@@ -149,6 +158,7 @@ export default function ItemForm() {
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#FFFFFF' },
   preview: { alignItems: 'center', paddingVertical: 8, backgroundColor: '#F9FAFB', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
+  trialBanner: { fontSize: 12, color: '#B45309', backgroundColor: '#FEF3C7', paddingHorizontal: 14, paddingVertical: 8 },
   section: { marginBottom: 18 },
   label: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 8 },
   sub: { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
@@ -156,6 +166,5 @@ const styles = StyleSheet.create({
   swatch: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: '#D1D5DB' },
   swatchNone: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
   swatchOn: { borderWidth: 3, borderColor: '#2563EB' },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 15 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#FFFFFFEE', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
 });

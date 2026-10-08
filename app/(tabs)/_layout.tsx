@@ -9,6 +9,7 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: 'ホーム', tabBarIcon: icon('🏠') }} />
       <Tabs.Screen name="closet" options={{ title: 'クローゼット', tabBarIcon: icon('👕') }} />
       <Tabs.Screen name="history" options={{ title: '履歴', tabBarIcon: icon('📅') }} />
+      <Tabs.Screen name="settings" options={{ title: '設定', tabBarIcon: icon('⚙️') }} />
     </Tabs>
   );
 }

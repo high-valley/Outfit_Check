@@ -4,7 +4,6 @@ import { CATEGORY_LABEL } from '../lib/labels';
 import type { ClothingItem } from '../types';
 import { ClothingIllustration } from './ClothingIllustration';
 
-const ITEM_W = 84;
 
 type Props = {
   label: string;
@@ -12,10 +11,14 @@ type Props = {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   disabled?: boolean;
+  /** 1タイルの幅（狭い画面・横並びレイアウト用に小さくできる） */
+  itemW?: number;
 };
 
 /** 横スワイプで服を切り替える（先頭は「なし」）。中央にあるものが選択中 */
-export function SlotCarousel({ label, items, selectedId, onSelect, disabled }: Props) {
+export function SlotCarousel({ label, items, selectedId, onSelect, disabled, itemW = 84 }: Props) {
+  const ITEM_W = itemW;
+  const tileH = Math.round(itemW * 0.86);
   const [width, setWidth] = useState(0);
   const ref = useRef<ScrollView>(null);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -58,7 +61,7 @@ export function SlotCarousel({ label, items, selectedId, onSelect, disabled }: P
             return (
               <Pressable
                 key={d?.id ?? 'none'}
-                style={[styles.tile, on && styles.tileOn]}
+                style={[styles.tile, { width: ITEM_W, height: tileH }, on && styles.tileOn]}
                 onPress={() => {
                   ref.current?.scrollTo({ x: i * ITEM_W, animated: true });
                   onSelect(d?.id ?? null);
@@ -68,15 +71,16 @@ export function SlotCarousel({ label, items, selectedId, onSelect, disabled }: P
                 accessibilityState={{ selected: on }}
               >
                 {d ? (
-                  <ClothingIllustration category={d.category} mainColor={d.mainColor} subColor={d.subColor} pattern={d.pattern} width={60} height={60} />
+                  <ClothingIllustration category={d.category} mainColor={d.mainColor} subColor={d.subColor} pattern={d.pattern} width={ITEM_W - 24} height={ITEM_W - 24} />
                 ) : (
                   <Text style={styles.none}>なし</Text>
                 )}
+                {d && !d.isOwned && <Text style={styles.badge}>お試し</Text>}
               </Pressable>
             );
           })}
         </ScrollView>
-        {width > 0 && <View pointerEvents="none" style={[styles.center, { left: pad }]} />}
+        {width > 0 && <View pointerEvents="none" style={[styles.center, { left: pad, width: ITEM_W, height: tileH }]} />}
       </View>
     </View>
   );
@@ -84,9 +88,10 @@ export function SlotCarousel({ label, items, selectedId, onSelect, disabled }: P
 
 const styles = StyleSheet.create({
   wrap: { marginBottom: 10 },
-  label: { fontSize: 12, fontWeight: '700', color: '#6B7280', marginLeft: 16, marginBottom: 4 },
-  tile: { width: ITEM_W, height: 72, alignItems: 'center', justifyContent: 'center', opacity: 0.55 },
+  label: { fontSize: 12, fontWeight: '700', color: '#6B7280', marginLeft: 8, marginBottom: 2 },
+  tile: { alignItems: 'center', justifyContent: 'center', opacity: 0.55 },
   tileOn: { opacity: 1 },
+  badge: { position: 'absolute', top: 0, right: 6, fontSize: 9, fontWeight: '700', color: '#FFFFFF', backgroundColor: '#D97706', borderRadius: 4, paddingHorizontal: 4, paddingVertical: 1, overflow: 'hidden' },
   none: { fontSize: 12, color: '#9CA3AF' },
-  center: { position: 'absolute', top: 0, width: ITEM_W, height: 72, borderRadius: 12, borderWidth: 2, borderColor: '#111827' },
+  center: { position: 'absolute', top: 0, borderRadius: 12, borderWidth: 2, borderColor: '#111827' },
 });

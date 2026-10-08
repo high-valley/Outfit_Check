@@ -33,7 +33,7 @@ jobs:
           a.expo.experiments={...a.expo.experiments,baseUrl:'/'+process.env.GITHUB_REPOSITORY.split('/')[1]};
           fs.writeFileSync('app.json',JSON.stringify(a,null,2));
           "
-      - run: npx expo export -p web
+      - run: npm run export:web
       # 直接URLを開いても動くように、SPAのフォールバックを置く
       - run: cp dist/index.html dist/404.html
       - uses: actions/upload-pages-artifact@v3

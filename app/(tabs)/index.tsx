@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
+import { BottomBar } from '../../src/components/BottomBar';
 import { PrimaryButton } from '../../src/components/Chip';
 import { OutfitCard } from '../../src/components/OutfitCard';
 import { dateKey, suggestOutfits } from '../../src/lib/suggest';
@@ -13,6 +14,8 @@ export default function Home() {
   const addSample = useStore((s) => s.addSampleItems);
   const wearOutfit = useStore((s) => s.wearOutfit);
   const [seed, setSeed] = useState(0);
+  const { width: screenW } = useWindowDimensions();
+  const cardW = Math.max(150, Math.min(200, Math.round((Math.min(screenW, 480) - 32 - 12) / 1.8)));
 
   const owned = useMemo(() => items.filter((i) => i.isOwned), [items]);
   const today = dateKey(new Date());
@@ -41,7 +44,7 @@ export default function Home() {
         ) : (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12 }}>
             {suggestions.map((s, i) => (
-              <OutfitCard key={s.items.map((x) => x.id).join('-')} itemIds={s.itemIds} items={items} score={s.score} width={170} subtitle={`候補 ${i + 1}`}>
+              <OutfitCard key={s.items.map((x) => x.id).join('-')} itemIds={s.itemIds} items={items} score={s.score} width={cardW} subtitle={`候補 ${i + 1}`}>
                 <View style={{ flexDirection: 'row' }}>
                   <PrimaryButton label="これを着る" onPress={() => wearOutfit(s.itemIds, s.score, today)} />
                 </View>
@@ -55,10 +58,10 @@ export default function Home() {
           </View>
         )}
       </ScrollView>
-      <View style={styles.bottom}>
+      <BottomBar>
         {owned.length === 0 && <PrimaryButton label="サンプルの服を登録" variant="secondary" onPress={addSample} />}
         <PrimaryButton label="コーデを作る" onPress={() => router.push('/outfit/new')} />
-      </View>
+      </BottomBar>
     </View>
   );
 }
@@ -80,5 +83,4 @@ const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: '#FFFFFF' },
   h: { fontSize: 16, fontWeight: '800', color: '#111827', marginBottom: 10 },
   note: { fontSize: 13, color: '#6B7280', lineHeight: 20 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#FFFFFFEE', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
 });

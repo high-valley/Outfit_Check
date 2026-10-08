@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Chip, PrimaryButton } from '../../src/components/Chip';
+import { BottomBar } from '../../src/components/BottomBar';
 import { SelectBar } from '../../src/components/SelectBar';
 import { confirmAsync } from '../../src/lib/confirm';
 import { ClothingIllustration } from '../../src/components/ClothingIllustration';
@@ -14,11 +15,12 @@ export default function Closet() {
   const items = useStore((s) => s.items);
   const addSample = useStore((s) => s.addSampleItems);
   const removeItems = useStore((s) => s.removeItems);
-  const [tab, setTab] = useState<Slot | 'all'>('all');
+  const [tab, setTab] = useState<Slot | 'all' | 'trial'>('all');
   const owned = useMemo(() => items.filter((i) => i.isOwned), [items]);
+  const trials = useMemo(() => items.filter((i) => !i.isOwned), [items]);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const shown = tab === 'all' ? owned : owned.filter((i) => CATEGORY_SLOT[i.category] === tab);
+  const shown = tab === 'all' ? owned : tab === 'trial' ? trials : owned.filter((i) => CATEGORY_SLOT[i.category] === tab);
 
   const toggle = (id: string) =>
     setSelected((cur) => {
@@ -47,7 +49,8 @@ export default function Closet() {
         {SLOTS.map((s) => (
           <Chip key={s} label={SLOT_LABEL[s]} selected={tab === s} onPress={() => setTab(s)} />
         ))}
-        {owned.length > 0 && (
+        <Chip label={`お試し（${trials.length}）`} selected={tab === 'trial'} onPress={() => setTab('trial')} />
+        {shown.length > 0 && (
           <View style={{ marginLeft: 'auto' }}>
             <Chip label={selecting ? 'キャンセル' : '選択'} selected={selecting} onPress={selecting ? exit : () => setSelecting(true)} />
           </View>
@@ -60,8 +63,10 @@ export default function Closet() {
         contentContainerStyle={{ padding: 8, paddingBottom: 90 }}
         ListEmptyComponent={
           <View style={{ alignItems: 'center', padding: 32, gap: 12 }}>
-            <Text style={{ color: '#6B7280' }}>まだ服がありません</Text>
-            {owned.length === 0 && <PrimaryButton label="サンプルの服を登録" variant="secondary" onPress={addSample} />}
+            <Text style={{ color: '#6B7280', textAlign: 'center', lineHeight: 20 }}>
+              {tab === 'trial' ? 'お試しデザインはまだありません。\n持っていない服を作って、手持ちの服との相性を試せます。' : 'まだ服がありません'}
+            </Text>
+            {owned.length === 0 && tab !== 'trial' && <PrimaryButton label="サンプルの服を登録" variant="secondary" onPress={addSample} />}
           </View>
         }
         renderItem={({ item }) => (
@@ -81,10 +86,19 @@ export default function Closet() {
       {selecting ? (
         <SelectBar count={selected.size} total={shown.length} onToggleAll={toggleAll} onDelete={remove} />
       ) : (
-        <View style={styles.bottom}>
-          <PrimaryButton label="＋ 服を登録" onPress={() => router.push('/item/new')} />
-          <PrimaryButton label="コーデを作る" variant="secondary" onPress={() => router.push('/outfit/new')} />
-        </View>
+        <BottomBar>
+          {tab === 'trial' ? (
+            <>
+              <PrimaryButton label="＋ お試しデザイン" onPress={() => router.push('/item/new?trial=1')} />
+              <PrimaryButton label="手持ちと合わせる" variant="secondary" onPress={() => router.push('/outfit/new?trial=1')} />
+            </>
+          ) : (
+            <>
+              <PrimaryButton label="＋ 服を登録" onPress={() => router.push('/item/new')} />
+              <PrimaryButton label="コーデを作る" variant="secondary" onPress={() => router.push('/outfit/new')} />
+            </>
+          )}
+        </BottomBar>
       )}
     </View>
   );
@@ -99,5 +113,4 @@ const styles = StyleSheet.create({
   check: { position: 'absolute', top: 6, right: 6, zIndex: 1, width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: '#9CA3AF', backgroundColor: '#FFFFFFCC', alignItems: 'center', justifyContent: 'center' },
   checkOn: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
   name: { marginTop: 4, fontSize: 12, color: '#374151' },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#FFFFFFEE', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
 });
