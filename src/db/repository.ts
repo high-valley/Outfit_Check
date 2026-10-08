@@ -49,6 +49,12 @@ export const repository: Repository = {
     const db = await getDb();
     await db.runAsync('DELETE FROM items WHERE id = ?', id);
   },
+  async deleteItems(ids) {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      for (const id of ids) await db.runAsync('DELETE FROM items WHERE id = ?', id);
+    });
+  },
   async listOutfits() {
     const db = await getDb();
     const rows = await db.getAllAsync<{ data: string }>('SELECT data FROM outfits ORDER BY created_at DESC');
@@ -66,5 +72,11 @@ export const repository: Repository = {
   async deleteOutfit(id) {
     const db = await getDb();
     await db.runAsync('DELETE FROM outfits WHERE id = ?', id);
+  },
+  async deleteOutfits(ids) {
+    const db = await getDb();
+    await db.withTransactionAsync(async () => {
+      for (const id of ids) await db.runAsync('DELETE FROM outfits WHERE id = ?', id);
+    });
   },
 };

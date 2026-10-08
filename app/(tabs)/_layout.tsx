@@ -8,6 +8,7 @@ export default function TabsLayout() {
     <Tabs screenOptions={{ headerTitleAlign: 'center', tabBarActiveTintColor: '#111827' }}>
       <Tabs.Screen name="index" options={{ title: 'ホーム', tabBarIcon: icon('🏠') }} />
       <Tabs.Screen name="closet" options={{ title: 'クローゼット', tabBarIcon: icon('👕') }} />
+      <Tabs.Screen name="history" options={{ title: '履歴', tabBarIcon: icon('📅') }} />
     </Tabs>
   );
 }

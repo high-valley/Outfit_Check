@@ -6,6 +6,7 @@ import { Mannequin } from '../../src/components/Mannequin';
 import { ScoreMeter } from '../../src/components/ScoreMeter';
 import { SlotCarousel } from '../../src/components/SlotCarousel';
 import { scoreOutfit } from '../../src/lib/scoring';
+import { dateKey, toItemIds } from '../../src/lib/suggest';
 import { useStore } from '../../src/store';
 import type { Category, ClothingItem } from '../../src/types';
 
@@ -27,6 +28,7 @@ export default function NewOutfit() {
   const router = useRouter();
   const all = useStore((s) => s.items);
   const saveOutfit = useStore((s) => s.saveOutfit);
+  const wearOutfit = useStore((s) => s.wearOutfit);
   const owned = useMemo(() => all.filter((i) => i.isOwned), [all]);
   const byKey = (k: Key) => owned.filter((i) => ROWS.find((r) => r.key === k)!.categories.includes(i.category));
 
@@ -80,6 +82,12 @@ export default function NewOutfit() {
     router.back();
   };
 
+  const wearToday = async () => {
+    if (!result) return;
+    await wearOutfit(toItemIds(list), result.total, dateKey(new Date()));
+    router.back();
+  };
+
   if (owned.length === 0) {
     return (
       <View style={[styles.wrap, { alignItems: 'center', justifyContent: 'center', padding: 24 }]}>
@@ -123,7 +131,8 @@ export default function NewOutfit() {
         </View>
       </ScrollView>
       <View style={styles.bottom}>
-        <PrimaryButton label="このコーデを保存" onPress={save} disabled={!result} />
+        <PrimaryButton label="保存のみ" variant="secondary" onPress={save} disabled={!result} />
+        <PrimaryButton label="今日これを着る" onPress={wearToday} disabled={!result} />
       </View>
     </View>
   );
@@ -139,5 +148,5 @@ const styles = StyleSheet.create({
   minus: { backgroundColor: '#FEE2E2', color: '#B91C1C' },
   plus: { backgroundColor: '#DCFCE7', color: '#15803D' },
   reasonText: { flex: 1, fontSize: 13, color: '#374151', lineHeight: 19 },
-  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', padding: 12, backgroundColor: '#FFFFFFEE', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
+  bottom: { position: 'absolute', left: 0, right: 0, bottom: 0, flexDirection: 'row', gap: 10, padding: 12, backgroundColor: '#FFFFFFEE', borderTopWidth: 1, borderTopColor: '#F3F4F6' },
 });

@@ -24,8 +24,12 @@ export const repository: Repository = {
   upsertItem: async (item) => upsert('items', item),
   deleteItem: async (id) =>
     write('items', read<ClothingItem>('items').filter((r) => r.id !== id)),
+  deleteItems: async (ids) =>
+    write('items', read<ClothingItem>('items').filter((r) => !ids.includes(r.id))),
   listOutfits: async () => read<Outfit>('outfits'),
   upsertOutfit: async (o) => upsert('outfits', o),
   deleteOutfit: async (id) =>
     write('outfits', read<Outfit>('outfits').filter((r) => r.id !== id)),
+  deleteOutfits: async (ids) =>
+    write('outfits', read<Outfit>('outfits').filter((r) => !ids.includes(r.id))),
 };
