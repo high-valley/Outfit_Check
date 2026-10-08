@@ -162,7 +162,9 @@ export function suggestOutfits(
   // 同点は乱数で並べ替える（比較のたびに乱数を引くと順序が不安定になるため、先に1回だけ引く）
   const scored = candidates.map((c) => ({ items: c, score: scoreOutfit(c, { season }).total, tie: rng() }));
   scored.sort((a, b) => b.score - a.score || a.tie - b.tie);
-  return pickDiverse(scored, limit).map(({ items: its, score }) => ({
+  // 多様性を優先して選んだあと、表示は点数の高い順に並べ直す（同点は選んだ順のまま）
+  const picked = pickDiverse(scored, limit).sort((a, b) => b.score - a.score);
+  return picked.map(({ items: its, score }) => ({
     items: its,
     score,
     itemIds: toItemIds(its),
