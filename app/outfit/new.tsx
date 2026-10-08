@@ -3,7 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { BottomBar } from '../../src/components/BottomBar';
 import { Chip, PrimaryButton } from '../../src/components/Chip';
-import { Mannequin } from '../../src/components/Mannequin';
+import { hasAnyPhoto } from '../../src/components/FlatLay';
+import { OutfitDisplay } from '../../src/components/OutfitDisplay';
 import { ScoreMeter } from '../../src/components/ScoreMeter';
 import { SlotCarousel } from '../../src/components/SlotCarousel';
 import { scoreOutfit } from '../../src/lib/scoring';
@@ -35,6 +36,7 @@ export default function NewOutfit() {
   const saveOutfit = useStore((s) => s.saveOutfit);
   const wearOutfit = useStore((s) => s.wearOutfit);
   const { trial, sel: selParam } = useLocalSearchParams<{ trial?: string; sel?: string }>();
+  const [illustMode, setIllustMode] = useState(false);
   const [includeTrial, setIncludeTrial] = useState(trial === '1');
   const owned = useMemo(() => all.filter((i) => i.isOwned), [all]);
   const trials = useMemo(() => all.filter((i) => !i.isOwned), [all]);
@@ -112,6 +114,7 @@ export default function NewOutfit() {
     router.back();
   };
 
+  const anyPhoto = hasAnyPhoto({ top: picked.top, bottom: picked.bottom, onepiece: picked.onepiece, outer: picked.outer, shoes: picked.shoes, accessory: [picked.bag, picked.hat].filter((x): x is ClothingItem => !!x) });
   const hasTrial = list.some((i) => !i.isOwned);
   const wearToday = async () => {
     if (!result || hasTrial) return;
@@ -133,13 +136,15 @@ export default function NewOutfit() {
       <View style={styles.trialRow}>
         <Chip label={`お試しを含める（${trials.length}）`} selected={includeTrial} onPress={() => setIncludeTrial((v) => !v)} />
         <Chip label="＋ お試し作成" onPress={() => router.push('/item/new?trial=1')} />
+        {anyPhoto && <Chip label={illustMode ? '🎨 イラスト表示' : '📷 写真表示'} onPress={() => setIllustMode((v) => !v)} />}
       </View>
       {hasTrial && <Text style={styles.trialNote}>お試しの服が入っています。「今日これを着る」は手持ちの服だけのときに使えます。</Text>}
       <ScrollView contentContainerStyle={{ paddingBottom: 110 }}>
         <View style={styles.split}>
           <View style={[styles.mannequin, { width: mannequinW + 16 }]}>
-            <Mannequin
+            <OutfitDisplay
               width={mannequinW}
+              mode={illustMode ? 'illust' : 'auto'}
               items={{
                 top: picked.top,
                 bottom: picked.bottom,

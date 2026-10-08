@@ -1,3 +1,4 @@
+import { cutoutByBackground } from './cutout';
 import { ANALYZE_EDGE, THUMB_EDGE, type PhotoSource, type PickedPhoto } from './types';
 
 function loadImage(file: File): Promise<HTMLImageElement> {
@@ -30,6 +31,21 @@ function draw(img: HTMLImageElement, edge: number, smooth: boolean) {
   return { canvas, ctx };
 }
 
+/** 無地の背景なら背景を透明にした画像を作る（Safari は WebP 書き出し非対応なので PNG になる） */
+function makeCutout({ canvas, ctx }: ReturnType<typeof draw>): string | null {
+  try {
+    const cut = cutoutByBackground({ data: ctx.getImageData(0, 0, canvas.width, canvas.height).data, width: canvas.width, height: canvas.height });
+    if (!cut) return null;
+    const out = document.createElement('canvas');
+    out.width = cut.pixels.width;
+    out.height = cut.pixels.height;
+    out.getContext('2d')!.putImageData(new ImageData(cut.pixels.data as Uint8ClampedArray<ArrayBuffer>, out.width, out.height), 0, 0);
+    return out.toDataURL('image/webp', 0.85);
+  } catch {
+    return null;
+  }
+}
+
 /** カメラ / アルバムから1枚選ぶ。キャンセルしたら null */
 export function pickPhoto(source: PhotoSource): Promise<PickedPhoto | null> {
   return new Promise((resolve, reject) => {
@@ -47,6 +63,7 @@ export function pickPhoto(source: PhotoSource): Promise<PickedPhoto | null> {
         const { width, height } = small.canvas;
         resolve({
           thumbUri: thumb.canvas.toDataURL('image/jpeg', 0.75),
+          cutoutUri: makeCutout(thumb),
           pixels: { data: small.ctx.getImageData(0, 0, width, height).data, width, height },
         });
       } catch (e) {

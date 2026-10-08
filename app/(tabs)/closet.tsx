@@ -18,7 +18,7 @@ export default function Closet() {
   const [tab, setTab] = useState<Slot | 'all' | 'trial'>('all');
   const owned = useMemo(() => items.filter((i) => i.isOwned), [items]);
   const trials = useMemo(() => items.filter((i) => !i.isOwned), [items]);
-  const [showPhoto, setShowPhoto] = useState(false);
+  const [showPhoto, setShowPhoto] = useState(true); // 写真があれば写真を主役に表示
   const hasPhoto = items.some((i) => i.photoUri);
   const [selecting, setSelecting] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());

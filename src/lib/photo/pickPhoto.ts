@@ -34,5 +34,6 @@ export async function pickPhoto(source: PhotoSource): Promise<PickedPhoto | null
   } catch {
     pixels = null; // 色の読み取りに失敗しても、写真の保存と手入力は続けられる
   }
-  return { thumbUri: `data:image/jpeg;base64,${thumb.base64}`, pixels };
+  // ネイティブは背景除去（透過PNGの書き出し）に未対応。元の写真をそのまま使う
+  return { thumbUri: `data:image/jpeg;base64,${thumb.base64}`, cutoutUri: null, pixels };
 }

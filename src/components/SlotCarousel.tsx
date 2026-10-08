@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View, type LayoutChangeEvent } from 'react-native';
 import { CATEGORY_LABEL } from '../lib/labels';
 import type { ClothingItem } from '../types';
-import { ClothingIllustration } from './ClothingIllustration';
+import { ItemImage } from './FlatLay';
 
 
 type Props = {
@@ -71,7 +71,7 @@ export function SlotCarousel({ label, items, selectedId, onSelect, disabled, ite
                 accessibilityState={{ selected: on }}
               >
                 {d ? (
-                  <ClothingIllustration category={d.category} mainColor={d.mainColor} subColor={d.subColor} pattern={d.pattern} width={ITEM_W - 24} height={ITEM_W - 24} />
+                  <ItemImage item={d} width={ITEM_W - 24} height={ITEM_W - 24} />
                 ) : (
                   <Text style={styles.none}>なし</Text>
                 )}

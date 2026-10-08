@@ -79,7 +79,11 @@ export default function ItemForm() {
   const [seasons, setSeasons] = useState<Season[]>(existing?.seasons ?? ['spring', 'summer', 'autumn', 'winter']);
   const [thickness, setThickness] = useState<Thickness>(existing?.thickness ?? 'medium');
   const [name, setName] = useState(existing?.name ?? '');
-  const [photoUri, setPhotoUri] = useState<string | null>(existing?.photoUri ?? null);
+  // 新しく撮った写真は「元の写真」と「背景を除去した写真」を持ち、切り替えて選べる
+  const [photoOriginal, setPhotoOriginal] = useState<string | null>(existing?.photoUri ?? null);
+  const [photoCutout, setPhotoCutout] = useState<string | null>(null);
+  const [useCutout, setUseCutout] = useState(true);
+  const photoUri = useCutout && photoCutout ? photoCutout : photoOriginal;
   const [suggestSub, setSuggestSub] = useState<string | null>(null);
   const [photoMsg, setPhotoMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -91,7 +95,9 @@ export default function ItemForm() {
     try {
       const photo = await pickPhoto(source);
       if (!photo) return;
-      setPhotoUri(photo.thumbUri);
+      setPhotoOriginal(photo.thumbUri);
+      setPhotoCutout(photo.cutoutUri);
+      setUseCutout(true);
       const colors = photo.pixels ? extractDominantColors(photo.pixels) : null;
       if (colors) {
         setMainColor(colors.main);
@@ -108,7 +114,8 @@ export default function ItemForm() {
     }
   };
   const removePhoto = () => {
-    setPhotoUri(null);
+    setPhotoOriginal(null);
+    setPhotoCutout(null);
     setSuggestSub(null);
     setPhotoMsg(null);
   };
@@ -166,8 +173,17 @@ export default function ItemForm() {
           <ChipRow>
             <Chip label="📷 撮影" onPress={() => takePhoto('camera')} disabled={busy} />
             <Chip label="🖼 アルバムから" onPress={() => takePhoto('library')} disabled={busy} />
-            {photoUri && <Chip label="写真を外す" onPress={removePhoto} />}
+            {photoOriginal && <Chip label="写真を外す" onPress={removePhoto} />}
           </ChipRow>
+          {photoOriginal && photoCutout && (
+            <ChipRow>
+              <Chip label="✂️ 背景を除去" selected={useCutout} onPress={() => setUseCutout(true)} />
+              <Chip label="元の写真" selected={!useCutout} onPress={() => setUseCutout(false)} />
+            </ChipRow>
+          )}
+          {photoOriginal && !photoCutout && photoMsg && (
+            <Text style={styles.hint}>背景を除去できなかったため、元の写真を使います（無地の背景で、服と違う色の上に広げて撮ると切り抜けます）。</Text>
+          )}
           <Text style={styles.hint}>
             {busy ? '読み取り中…' : '服を無地の背景に広げて撮ると、色をきれいに読み取れます。写真は端末の中だけに保存され、外部には送信されません。'}
           </Text>
