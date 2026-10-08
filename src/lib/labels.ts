@@ -65,4 +65,4 @@ export const COLOR_PRESETS = [
   '#388E3C', '#1976D2', '#7B1FA2', '#F57C00',
 ];
 
-export const scoreColor = (total: number) => (total >= 80 ? '#16A34A' : total >= 60 ? '#CA8A04' : '#DC2626');
+export { scoreColor } from '../theme';

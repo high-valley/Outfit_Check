@@ -1,17 +1,20 @@
 import * as Clipboard from 'expo-clipboard';
 import { useRef, useState } from 'react';
 import { Platform, ScrollView, Share, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Card } from '../../src/components/Card';
 import { PrimaryButton } from '../../src/components/Chip';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { colors } from '../../src/theme';
 import { createBackup, parseBackup } from '../../src/lib/backup';
 import { confirmAsync } from '../../src/lib/confirm';
 import { useStore } from '../../src/store';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={styles.section}>
+    <Card style={styles.section}>
       <Text style={styles.h}>{title}</Text>
       {children}
-    </View>
+    </Card>
   );
 }
 const Row = ({ children }: { children: React.ReactNode }) => <View style={styles.row}>{children}</View>;
@@ -84,6 +87,8 @@ export default function Settings() {
   };
 
   return (
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+    <ScreenHeader title="設定" subtitle="バックアップとデータ管理" />
     <ScrollView ref={scroller} contentContainerStyle={styles.wrap}>
       <Text style={styles.count}>登録: 服 {items.filter((i) => i.isOwned).length}点 / お試し {items.filter((i) => !i.isOwned).length}点 / コーデ {outfits.length}件</Text>
       {msg && <Text style={[styles.msg, msg.ok ? styles.msgOk : styles.msgNg]}>{msg.text}</Text>}
@@ -125,19 +130,20 @@ export default function Settings() {
       </Section>
       <Text style={styles.foot}>クラウド同期（アカウント作成）は今後のバージョンで追加予定です。</Text>
     </ScrollView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  wrap: { padding: 16, paddingBottom: 40, gap: 6 },
+  wrap: { paddingHorizontal: 16, paddingBottom: 40, gap: 12 },
   count: { fontSize: 13, color: '#374151', marginBottom: 6 },
-  section: { marginTop: 14, gap: 10 },
+  section: { gap: 10 },
   h: { fontSize: 16, fontWeight: '800', color: '#111827' },
   note: { fontSize: 12, color: '#6B7280', lineHeight: 18 },
   row: { flexDirection: 'row', gap: 10 },
   input: { minHeight: 110, maxHeight: 200, borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, padding: 12, fontSize: 16, textAlignVertical: 'top' },
   msg: { fontSize: 13, lineHeight: 19, padding: 10, borderRadius: 10 },
-  msgOk: { backgroundColor: '#DCFCE7', color: '#166534' },
+  msgOk: { backgroundColor: colors.greenSoft, color: '#166534' },
   msgNg: { backgroundColor: '#FEE2E2', color: '#991B1B' },
   foot: { marginTop: 24, fontSize: 11, color: '#9CA3AF' },
 });

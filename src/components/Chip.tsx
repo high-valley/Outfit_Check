@@ -1,6 +1,8 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { colors, radius } from '../theme';
+import { Icon, type IconName } from './Icon';
 
-export function Chip({ label, selected, onPress, disabled }: { label: string; selected?: boolean; onPress: () => void; disabled?: boolean }) {
+export function Chip({ label, selected, onPress, disabled, icon }: { label: string; selected?: boolean; onPress: () => void; disabled?: boolean; icon?: IconName }) {
   return (
     <Pressable
       onPress={onPress}
@@ -9,6 +11,7 @@ export function Chip({ label, selected, onPress, disabled }: { label: string; se
       accessibilityRole="button"
       accessibilityState={{ selected: !!selected }}
     >
+      {icon && <Icon name={icon} size={16} color={selected ? colors.white : colors.ink} />}
       <Text style={[styles.text, selected && styles.textOn]}>{label}</Text>
     </Pressable>
   );
@@ -18,7 +21,8 @@ export function ChipRow({ children }: { children: React.ReactNode }) {
   return <View style={styles.row}>{children}</View>;
 }
 
-export function PrimaryButton({ label, onPress, variant = 'primary', disabled }: { label: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger'; disabled?: boolean }) {
+export function PrimaryButton({ label, onPress, variant = 'primary', disabled, icon }: { label: string; onPress: () => void; variant?: 'primary' | 'secondary' | 'danger'; disabled?: boolean; icon?: IconName }) {
+  const textColor = variant === 'primary' ? colors.white : variant === 'danger' ? colors.red : colors.ink;
   return (
     <Pressable
       onPress={onPress}
@@ -26,19 +30,20 @@ export function PrimaryButton({ label, onPress, variant = 'primary', disabled }:
       style={[styles.btn, variant === 'secondary' && styles.btnSecondary, variant === 'danger' && styles.btnDanger, disabled && { opacity: 0.4 }]}
       accessibilityRole="button"
     >
-      <Text style={[styles.btnText, variant === 'secondary' && { color: '#111827' }, variant === 'danger' && { color: '#DC2626' }]}>{label}</Text>
+      {icon && <Icon name={icon} size={18} color={textColor} />}
+      <Text style={[styles.btnText, { color: textColor }]} numberOfLines={1}>{label}</Text>
     </Pressable>
   );
 }
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { paddingHorizontal: 14, paddingVertical: 9, minHeight: 40, justifyContent: 'center', borderRadius: 999, backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  chipOn: { backgroundColor: '#111827', borderColor: '#111827' },
-  text: { fontSize: 14, color: '#374151' },
-  textOn: { color: '#FFFFFF', fontWeight: '600' },
-  btn: { flex: 1, minHeight: 48, borderRadius: 12, backgroundColor: '#111827', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
-  btnSecondary: { backgroundColor: '#F3F4F6', borderWidth: 1, borderColor: '#E5E7EB' },
-  btnDanger: { backgroundColor: '#FEF2F2', borderWidth: 1, borderColor: '#FECACA' },
-  btnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  chip: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, minHeight: 38, justifyContent: 'center', borderRadius: radius.pill, backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line },
+  chipOn: { backgroundColor: colors.ink, borderColor: colors.ink },
+  text: { fontSize: 14, color: colors.ink },
+  textOn: { color: colors.white, fontWeight: '700' },
+  btn: { flex: 1, minHeight: 50, borderRadius: radius.btn, backgroundColor: colors.ink, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 },
+  btnSecondary: { backgroundColor: colors.card, borderWidth: 1.5, borderColor: colors.ink },
+  btnDanger: { backgroundColor: colors.redSoft, borderWidth: 1, borderColor: '#FECACA' },
+  btnText: { fontSize: 15, fontWeight: '700' },
 });

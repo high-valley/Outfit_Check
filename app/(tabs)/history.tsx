@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { FlatList, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Chip } from '../../src/components/Chip';
+import { ScreenHeader } from '../../src/components/ScreenHeader';
+import { colors } from '../../src/theme';
 import { WearCalendar } from '../../src/components/WearCalendar';
 import { shiftMonth, wornByDate } from '../../src/lib/calendar';
 import { dateKey } from '../../src/lib/suggest';
@@ -50,6 +52,7 @@ export default function History() {
   if (view === 'calendar')
     return (
       <View style={styles.wrap}>
+        <ScreenHeader title="履歴" subtitle="着たコーデを振り返ろう" />
         {viewTabs}
         <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
           <WearCalendar
@@ -65,7 +68,7 @@ export default function History() {
             {day && dayOutfits.length === 0 && <Text style={styles.empty0}>この日の着用記録はありません。ホームの「これを着る」で記録されます。</Text>}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {dayOutfits.map((o) => (
-                <OutfitCard key={o.id} itemIds={o.itemIds} items={items} score={o.score} width={170} subtitle={`着用 ${o.wornDates.length}回`} />
+                <OutfitCard key={o.id} itemIds={o.itemIds} items={items} score={o.score} width={168} subtitle={`着用 ${o.wornDates.length}回`} />
               ))}
             </View>
           </View>
@@ -75,6 +78,7 @@ export default function History() {
 
   return (
     <View style={styles.wrap}>
+      <ScreenHeader title="履歴" subtitle="着たコーデを振り返ろう" />
       {viewTabs}
       <View style={styles.head}>
         <Text style={styles.count}>保存したコーデ: {outfits.length}件</Text>
@@ -94,7 +98,7 @@ export default function History() {
           return (
             <Pressable style={{ flex: 1 }} disabled={!selecting} onPress={() => toggle(o.id)} accessibilityRole="button" accessibilityState={{ selected: on }}>
               <View style={[{ flex: 1 }, on && styles.on]}>
-                <OutfitCard itemIds={o.itemIds} items={items} score={o.score} width={170} subtitle={o.wornDates.length ? `着用 ${o.wornDates.length}回（最終 ${last}）` : '未着用'} />
+                <OutfitCard itemIds={o.itemIds} items={items} score={o.score} width={168} subtitle={o.wornDates.length ? `着用 ${o.wornDates.length}回（最終 ${last}）` : '未着用'} />
                 {selecting && (
                   <View style={[styles.check, on && styles.checkOn]}>
                     <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>{on ? '✓' : ''}</Text>
@@ -111,14 +115,14 @@ export default function History() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#FFFFFF' },
-  seg: { flexDirection: 'row', gap: 8, paddingHorizontal: 14, paddingTop: 10 },
+  wrap: { flex: 1, backgroundColor: colors.bg },
+  seg: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 6 },
   dayTitle: { fontSize: 14, fontWeight: '800', color: '#111827' },
   empty0: { fontSize: 13, color: '#6B7280', lineHeight: 20 },
   head: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 14, paddingVertical: 10 },
   count: { fontSize: 13, color: '#6B7280' },
   empty: { padding: 24, color: '#6B7280', lineHeight: 20, fontSize: 13 },
-  on: { borderRadius: 14, borderWidth: 3, borderColor: '#2563EB' },
+  on: { borderRadius: 18, borderWidth: 3, borderColor: colors.ink },
   check: { position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: 12, borderWidth: 2, borderColor: '#9CA3AF', backgroundColor: '#FFFFFFCC', alignItems: 'center', justifyContent: 'center' },
-  checkOn: { backgroundColor: '#2563EB', borderColor: '#2563EB' },
+  checkOn: { backgroundColor: colors.ink, borderColor: colors.ink },
 });

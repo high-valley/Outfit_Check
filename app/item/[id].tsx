@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { BottomBar } from '../../src/components/BottomBar';
 import { Chip, ChipRow, PrimaryButton } from '../../src/components/Chip';
+import { colors, radius } from '../../src/theme';
 import { ClothingIllustration } from '../../src/components/ClothingIllustration';
 import {
   CATEGORY_LABEL, COLOR_PRESETS, FIT_LABEL, LENGTH_LABEL, PATTERN_LABEL, SEASON_LABEL, SLOT_LABEL, TASTE_LABEL, THICKNESS_LABEL,
@@ -169,15 +170,18 @@ export default function ItemForm() {
         </View>
       </View>
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 100 }}>
+        <Section title="アイテム名（任意）">
+          <TextInput value={name} onChangeText={setName} placeholder="例：白Tシャツ" style={styles.input} />
+        </Section>
         <Section title="写真から登録">
           <ChipRow>
-            <Chip label="📷 撮影" onPress={() => takePhoto('camera')} disabled={busy} />
-            <Chip label="🖼 アルバムから" onPress={() => takePhoto('library')} disabled={busy} />
+            <Chip icon="camera" label="撮影" onPress={() => takePhoto('camera')} disabled={busy} />
+            <Chip icon="image" label="アルバムから" onPress={() => takePhoto('library')} disabled={busy} />
             {photoOriginal && <Chip label="写真を外す" onPress={removePhoto} />}
           </ChipRow>
           {photoOriginal && photoCutout && (
             <ChipRow>
-              <Chip label="✂️ 背景を除去" selected={useCutout} onPress={() => setUseCutout(true)} />
+              <Chip icon="scissors" label="背景を除去" selected={useCutout} onPress={() => setUseCutout(true)} />
               <Chip label="元の写真" selected={!useCutout} onPress={() => setUseCutout(false)} />
             </ChipRow>
           )}
@@ -226,9 +230,6 @@ export default function ItemForm() {
         <Section title="厚さ">
           <ChipRow>{(Object.keys(THICKNESS_LABEL) as Thickness[]).map((t) => <Chip key={t} label={THICKNESS_LABEL[t]} selected={thickness === t} onPress={() => setThickness(t)} />)}</ChipRow>
         </Section>
-        <Section title="名前（任意）">
-          <TextInput value={name} onChangeText={setName} placeholder="例：お気に入りの白T" style={styles.input} />
-        </Section>
       </ScrollView>
       {error && <Text style={styles.error}>{error}</Text>}
       <BottomBar inset>
@@ -241,23 +242,23 @@ export default function ItemForm() {
 }
 
 const styles = StyleSheet.create({
-  wrap: { flex: 1, backgroundColor: '#FFFFFF' },
+  wrap: { flex: 1, backgroundColor: colors.bg },
   previewCol: { alignItems: 'center' },
   previewLabel: { fontSize: 11, color: '#6B7280', marginTop: 2 },
-  photo: { width: 130, height: 130, borderRadius: 10, backgroundColor: '#FFFFFF' },
+  photo: { width: 130, height: 130, borderRadius: radius.tile, backgroundColor: 'transparent' },
   hint: { fontSize: 12, color: '#6B7280', lineHeight: 18 },
-  photoMsg: { fontSize: 12, color: '#166534', backgroundColor: '#DCFCE7', borderRadius: 8, padding: 8, lineHeight: 18 },
+  photoMsg: { fontSize: 12, color: '#166534', backgroundColor: colors.greenSoft, borderRadius: 10, padding: 8, lineHeight: 18 },
   subSuggest: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 40 },
   subDot: { width: 22, height: 22, borderRadius: 11, borderWidth: 1, borderColor: '#D1D5DB' },
   error: { position: 'absolute', left: 12, right: 12, bottom: 84, backgroundColor: '#FEE2E2', color: '#991B1B', borderRadius: 10, padding: 10, fontSize: 12, lineHeight: 18, overflow: 'hidden' },
-  preview: { flexDirection: 'row', justifyContent: 'center', gap: 24, alignItems: 'flex-end', paddingVertical: 8, backgroundColor: '#F9FAFB', borderBottomWidth: 1, borderBottomColor: '#F3F4F6' },
-  trialBanner: { fontSize: 12, color: '#B45309', backgroundColor: '#FEF3C7', paddingHorizontal: 14, paddingVertical: 8 },
+  preview: { flexDirection: 'row', justifyContent: 'center', gap: 24, alignItems: 'flex-end', paddingVertical: 10, marginHorizontal: 16, marginTop: 4, borderRadius: radius.card, backgroundColor: colors.tile },
+  trialBanner: { fontSize: 12, color: '#B45309', backgroundColor: colors.amberSoft, paddingHorizontal: 14, paddingVertical: 8 },
   section: { marginBottom: 18 },
-  label: { fontSize: 14, fontWeight: '700', color: '#111827', marginBottom: 8 },
+  label: { fontSize: 14, fontWeight: '800', color: colors.ink, marginBottom: 8 },
   sub: { fontSize: 11, color: '#9CA3AF', marginBottom: 4 },
   swatches: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   swatch: { width: 34, height: 34, borderRadius: 17, borderWidth: 1, borderColor: '#D1D5DB' },
   swatchNone: { alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' },
-  swatchOn: { borderWidth: 3, borderColor: '#2563EB' },
-  input: { borderWidth: 1, borderColor: '#E5E7EB', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 },
+  swatchOn: { borderWidth: 3, borderColor: colors.ink },
+  input: { borderWidth: 1, borderColor: colors.line, backgroundColor: colors.card, borderRadius: radius.btn, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, color: colors.text },
 });
