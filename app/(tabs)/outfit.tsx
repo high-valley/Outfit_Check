@@ -7,6 +7,7 @@ import { Chip, PrimaryButton } from '../../src/components/Chip';
 import { hasAnyPhoto, ItemImage } from '../../src/components/FlatLay';
 import { Icon } from '../../src/components/Icon';
 import { OutfitDisplay } from '../../src/components/OutfitDisplay';
+import { OutfitList } from '../../src/components/OutfitList';
 import { ScoreBars } from '../../src/components/ScoreBars';
 import { ScreenHeader } from '../../src/components/ScreenHeader';
 import { CATEGORY_LABEL } from '../../src/lib/labels';
@@ -14,7 +15,7 @@ import { scoreOutfit } from '../../src/lib/scoring';
 import { dateKey, toItemIds } from '../../src/lib/suggest';
 import { useStore } from '../../src/store';
 import { colors, radius, scoreColor, scoreComment } from '../../src/theme';
-import type { Category, ClothingItem } from '../../src/types';
+import type { Category, ClothingItem, Outfit } from '../../src/types';
 
 type Key = 'top' | 'bottom' | 'onepiece' | 'outer' | 'shoes' | 'bag' | 'hat';
 const ROWS: { key: Key; label: string; categories: Category[] }[] = [
@@ -37,10 +38,12 @@ export default function OutfitScreen() {
   const all = useStore((s) => s.items);
   const saveOutfit = useStore((s) => s.saveOutfit);
   const wearOutfit = useStore((s) => s.wearOutfit);
+  const outfits = useStore((s) => s.outfits);
   const { trial, sel: selParam, n } = useLocalSearchParams<{ trial?: string; sel?: string; n?: string }>();
 
   const owned = useMemo(() => all.filter((i) => i.isOwned), [all]);
   const trials = useMemo(() => all.filter((i) => !i.isOwned), [all]);
+  const [mode, setMode] = useState<'create' | 'list'>('create');
   const [includeTrial, setIncludeTrial] = useState(false);
   const [illustMode, setIllustMode] = useState(false);
   const [openKey, setOpenKey] = useState<Key>('top');
@@ -50,6 +53,29 @@ export default function OutfitScreen() {
   const byKey = (k: Key) => candidates.filter((i) => ROWS.find((r) => r.key === k)!.categories.includes(i.category));
 
   const [sel, setSel] = useState<Sel>(EMPTY);
+  // 保存済みの itemIds から選択状態を作る（削除済みの服は無視）
+  const selFromIds = (ids: Outfit['itemIds']): Sel => {
+    const byId = (id?: string) => all.find((i) => i.id === id);
+    const acc = (ids.accessory ?? []).map(byId);
+    return {
+      top: byId(ids.top)?.id ?? null,
+      bottom: byId(ids.bottom)?.id ?? null,
+      onepiece: byId(ids.onepiece)?.id ?? null,
+      outer: byId(ids.outer)?.id ?? null,
+      shoes: byId(ids.shoes)?.id ?? null,
+      bag: acc.find((a) => a?.category === 'bag')?.id ?? null,
+      hat: acc.find((a) => a?.category === 'hat')?.id ?? null,
+    };
+  };
+  // 一覧のコーデを開いて、作成画面で調整できるようにする
+  const openOutfit = (o: Outfit) => {
+    const next = selFromIds(o.itemIds);
+    const used = Object.values(next).map((id) => all.find((i) => i.id === id));
+    if (used.some((i) => i && !i.isOwned)) setIncludeTrial(true);
+    setSel(next);
+    setSaved(null);
+    setMode('create');
+  };
   // ホームの「調整する」などから開かれたとき（パラメータが変わったとき）に、選択状態を作り直す
   const appliedKey = useRef<string | null>(null);
   useEffect(() => {
@@ -61,18 +87,8 @@ export default function OutfitScreen() {
     if (trial === '1') setIncludeTrial(true);
     if (selParam) {
       try {
-        const ids = JSON.parse(selParam) as { top?: string; bottom?: string; onepiece?: string; outer?: string; shoes?: string; accessory?: string[] };
-        const byId = (id?: string) => all.find((i) => i.id === id);
-        const acc = (ids.accessory ?? []).map(byId);
-        setSel({
-          top: byId(ids.top)?.id ?? null,
-          bottom: byId(ids.bottom)?.id ?? null,
-          onepiece: byId(ids.onepiece)?.id ?? null,
-          outer: byId(ids.outer)?.id ?? null,
-          shoes: byId(ids.shoes)?.id ?? null,
-          bag: acc.find((a) => a?.category === 'bag')?.id ?? null,
-          hat: acc.find((a) => a?.category === 'hat')?.id ?? null,
-        });
+        setSel(selFromIds(JSON.parse(selParam) as Outfit['itemIds']));
+        setMode('create');
         return;
       } catch {
         /* 不正な値は無視して通常の初期化へ */
@@ -124,10 +140,27 @@ export default function OutfitScreen() {
   const advice = result ? result.reasons.filter((r) => r.type === 'minus').slice(0, 2) : [];
   const goods = result ? result.reasons.filter((r) => r.type === 'plus').slice(0, 1) : [];
 
+  const modeTabs = (
+    <View style={styles.seg}>
+      <Chip label="作成" selected={mode === 'create'} onPress={() => setMode('create')} />
+      <Chip label={`一覧（${outfits.length}）`} selected={mode === 'list'} onPress={() => setMode('list')} />
+    </View>
+  );
+  if (mode === 'list') {
+    return (
+      <View style={styles.wrap}>
+        <ScreenHeader title="コーデ" subtitle="保存したコーデを見返そう" />
+        {modeTabs}
+        <OutfitList onOpen={openOutfit} cardWidth={Math.round((Math.min(screenW, 480) - 24 - 12) / 2) - 4} />
+      </View>
+    );
+  }
+
   if (owned.length === 0) {
     return (
       <View style={styles.wrap}>
-        <ScreenHeader title="コーデ作成" subtitle="アイテムを組み合わせてコーデを作ろう" />
+        <ScreenHeader title="コーデ" subtitle="アイテムを組み合わせてコーデを作ろう" />
+        {modeTabs}
         <View style={styles.empty}>
           <Text style={{ color: colors.sub, textAlign: 'center', lineHeight: 22 }}>服が登録されていません。{'\n'}クローゼットで服を登録してください。</Text>
           <View style={{ flexDirection: 'row', marginTop: 16 }}>
@@ -142,7 +175,8 @@ export default function OutfitScreen() {
   return (
     <View style={styles.wrap}>
       <ScrollView contentContainerStyle={{ paddingBottom: 110 }} showsVerticalScrollIndicator={false}>
-        <ScreenHeader title="コーデ作成" subtitle="アイテムを組み合わせてコーデを作ろう" />
+        <ScreenHeader title="コーデ" subtitle="アイテムを組み合わせてコーデを作ろう" />
+        {modeTabs}
         <View style={{ paddingHorizontal: 16, gap: 14 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
             <Chip icon="flask" label={`お試しを含める（${trials.length}）`} selected={includeTrial} onPress={() => setIncludeTrial((v) => !v)} />
@@ -240,6 +274,7 @@ export default function OutfitScreen() {
 
 const styles = StyleSheet.create({
   wrap: { flex: 1, backgroundColor: colors.bg },
+  seg: { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 10 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   summary: { flexDirection: 'row', gap: 12, padding: 10 },
   preview: { alignItems: 'center', backgroundColor: colors.tile, borderRadius: radius.tile, paddingVertical: 8, alignSelf: 'flex-start' },
